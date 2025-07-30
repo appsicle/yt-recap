@@ -10,7 +10,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 
 interface VideoPageProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 export async function generateStaticParams() {
@@ -20,7 +20,8 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: VideoPageProps): Promise<Metadata> {
-  const video = videos.find((v) => v.slug === params.slug);
+  const { slug } = await params;
+  const video = videos.find((v) => v.slug === slug);
   
   if (!video) {
     return {
@@ -32,8 +33,9 @@ export async function generateMetadata({ params }: VideoPageProps): Promise<Meta
   return metaTags;
 }
 
-export default function VideoPage({ params }: VideoPageProps) {
-  const video = videos.find((v) => v.slug === params.slug);
+export default async function VideoPage({ params }: VideoPageProps) {
+  const { slug } = await params;
+  const video = videos.find((v) => v.slug === slug);
   
   if (!video) {
     notFound();

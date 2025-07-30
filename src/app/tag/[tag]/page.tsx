@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 
 interface TagPageProps {
-  params: { tag: string };
+  params: Promise<{ tag: string }>;
 }
 
 // Redirect tag pages to the main category pages
-export default function TagPage({ params }: TagPageProps) {
+export default async function TagPage({ params }: TagPageProps) {
+  const { tag } = await params;
   const tagToCategory: Record<string, string> = {
     "youtube-drama": "/youtube-drama-2024",
     "content-creator-feuds": "/youtube-drama-2024",
@@ -33,7 +34,7 @@ export default function TagPage({ params }: TagPageProps) {
     "safiya-nygaard": "/ex-buzzfeed-creators",
   };
 
-  const normalizedTag = params.tag.toLowerCase();
+  const normalizedTag = tag.toLowerCase();
   const redirectPath = tagToCategory[normalizedTag] || `/youtube-drama-2024`;
   
   redirect(redirectPath);

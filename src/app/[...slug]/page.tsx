@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/breadcrumb";
 
 interface DynamicPageProps {
-  params: { slug: string[] };
+  params: Promise<{ slug: string[] }>;
 }
 
 const pageContent: Record<
@@ -374,8 +374,9 @@ const pageContent: Record<
 export async function generateMetadata({
   params,
 }: DynamicPageProps): Promise<Metadata> {
-  const slug = params.slug.join("/");
-  const content = pageContent[slug];
+  const { slug } = await params;
+  const slugPath = slug.join("/");
+  const content = pageContent[slugPath];
 
   if (!content) {
     return {
@@ -396,13 +397,14 @@ export async function generateMetadata({
   };
 }
 
-export default function DynamicPage({ params }: DynamicPageProps) {
-  const slug = params.slug.join("/");
-  const content = pageContent[slug];
+export default async function DynamicPage({ params }: DynamicPageProps) {
+  const { slug } = await params;
+  const slugPath = slug.join("/");
+  const content = pageContent[slugPath];
 
   if (!content) {
     // For unmatched paths, create a generic SEO page
-    const searchTerm = params.slug[params.slug.length - 1].replace(/-/g, " ");
+    const searchTerm = slug[slug.length - 1].replace(/-/g, " ");
     const relevantVideos = getVideosByKeyword(searchTerm);
 
     if (relevantVideos.length === 0) {
@@ -425,83 +427,83 @@ export default function DynamicPage({ params }: DynamicPageProps) {
 
   // Get videos based on the page type
   let filteredVideos = videos;
-  if (slug === "sister-squad-drama") {
+  if (slugPath === "sister-squad-drama") {
     filteredVideos = videos.filter((v) =>
       v.title.toLowerCase().includes("sister squad")
     );
-  } else if (slug === "mukbang-controversies" || slug === "mukbanger-feud") {
+  } else if (slugPath === "mukbang-controversies" || slugPath === "mukbanger-feud") {
     filteredVideos = videos.filter(
       (v) =>
         v.title.toLowerCase().includes("stephanie soo") ||
         v.title.toLowerCase().includes("nikocado")
     );
-  } else if (slug === "ex-buzzfeed-creators") {
+  } else if (slugPath === "ex-buzzfeed-creators") {
     filteredVideos = videos.filter((v) =>
       v.title.toLowerCase().includes("buzzfeed")
     );
-  } else if (slug === "what-happened-to" || slug === "where-are-they-now" || slug === "creator-disappearances") {
+  } else if (slugPath === "what-happened-to" || slugPath === "where-are-they-now" || slugPath === "creator-disappearances") {
     filteredVideos = videos; // Show all "what happened to" videos
-  } else if (slug === "james-charles-drama" || slug === "james-charles") {
+  } else if (slugPath === "james-charles-drama" || slugPath === "james-charles") {
     filteredVideos = videos.filter(
       (v) =>
         v.title.toLowerCase().includes("sister squad") ||
         v.title.toLowerCase().includes("james")
     );
-  } else if (slug === "emma-chamberlain-scandal" || slug === "emma-chamberlain") {
+  } else if (slugPath === "emma-chamberlain-scandal" || slugPath === "emma-chamberlain") {
     filteredVideos = videos.filter((v) =>
       v.title.toLowerCase().includes("sister squad")
     );
-  } else if (slug === "beauty-guru-feuds" || slug === "beauty-community-drama") {
+  } else if (slugPath === "beauty-guru-feuds" || slugPath === "beauty-community-drama") {
     filteredVideos = videos.filter(
       (v) =>
         v.title.toLowerCase().includes("sister squad") ||
         v.keywords.some((k) => k.toLowerCase().includes("beauty"))
     );
-  } else if (slug === "youtube-breakups") {
+  } else if (slugPath === "youtube-breakups") {
     filteredVideos = videos.filter(
       (v) =>
         v.title.toLowerCase().includes("squad") ||
         v.title.toLowerCase().includes("o2l") ||
         v.title.toLowerCase().includes("crew")
     );
-  } else if (slug === "youtube-drama" || slug === "youtube-controversies" || slug === "influencer-controversies") {
+  } else if (slugPath === "youtube-drama" || slugPath === "youtube-controversies" || slugPath === "influencer-controversies") {
     filteredVideos = videos; // Show all drama videos
-  } else if (slug === "youtube-drama-2019") {
+  } else if (slugPath === "youtube-drama-2019") {
     filteredVideos = videos.filter(
       (v) =>
         v.keywords.some((k) => k.toLowerCase().includes("2019")) ||
         v.title.toLowerCase().includes("sister squad")
     );
-  } else if (slug === "stephanie-soo" || slug === "stephanie-soo-scandal") {
+  } else if (slugPath === "stephanie-soo" || slugPath === "stephanie-soo-scandal") {
     filteredVideos = videos.filter((v) =>
       v.title.toLowerCase().includes("stephanie soo")
     );
-  } else if (slug === "nikocado-avocado") {
+  } else if (slugPath === "nikocado-avocado") {
     filteredVideos = videos.filter((v) =>
       v.title.toLowerCase().includes("nikocado")
     );
-  } else if (slug === "youtube-history") {
+  } else if (slugPath === "youtube-history") {
     filteredVideos = videos; // Show all videos as they're all part of YouTube history
-  } else if (slug.startsWith("what-happened-to-")) {
+  } else if (slugPath.startsWith("what-happened-to-")) {
     // Handle "what happened to X" queries
-    const creator = slug.replace("what-happened-to-", "").replace(/-/g, " ");
+    const creator = slugPath.replace("what-happened-to-", "").replace(/-/g, " ");
     filteredVideos = videos.filter(
       (v) =>
         v.title.toLowerCase().includes(creator) ||
         v.keywords.some((k) => k.toLowerCase().includes(creator)) ||
         v.teaser.toLowerCase().includes(creator)
     );
-  } else if (slug.startsWith("where-is-") || slug.startsWith("where-are-")) {
+  } else if (slugPath.startsWith("where-is-") || slugPath.startsWith("where-are-")) {
     // Handle "where is/are X now" queries
-    const searchTerm = slug.replace(/where-(is|are)-/, "").replace(/-now$/, "").replace(/-/g, " ");
+    const searchTerm = slugPath.replace(/where-(is|are)-/, "").replace(/-now$/, "").replace(/-/g, " ");
     filteredVideos = videos.filter(
       (v) =>
         v.title.toLowerCase().includes(searchTerm) ||
         v.keywords.some((k) => k.toLowerCase().includes(searchTerm))
     );
-  } else if (slug.includes("-and-") && slug.includes("-drama")) {
+  } else if (slugPath.includes("-and-") && slugPath.includes("-drama")) {
     // Handle "X and Y drama" queries
-    const parts = slug.replace("-drama", "").split("-and-");
+    const parts = slugPath.replace("-drama", "").split("-and-");
     filteredVideos = videos.filter(
       (v) =>
         parts.every(part => 
@@ -509,17 +511,17 @@ export default function DynamicPage({ params }: DynamicPageProps) {
           v.keywords.some((k) => k.toLowerCase().includes(part.replace(/-/g, " ")))
         )
     );
-  } else if (slug.startsWith("why-did-")) {
+  } else if (slugPath.startsWith("why-did-")) {
     // Handle "why did X" queries
-    const subject = slug.replace("why-did-", "").replace(/-/g, " ");
+    const subject = slugPath.replace("why-did-", "").replace(/-/g, " ");
     filteredVideos = videos.filter(
       (v) =>
         v.title.toLowerCase().includes(subject) ||
         v.keywords.some((k) => k.toLowerCase().includes(subject))
     );
-  } else if (slug.includes("-timeline")) {
+  } else if (slugPath.includes("-timeline")) {
     // Handle timeline queries
-    const topic = slug.replace("-timeline", "").replace(/-/g, " ");
+    const topic = slugPath.replace("-timeline", "").replace(/-/g, " ");
     filteredVideos = videos.filter(
       (v) =>
         v.keywords.some((k) => k.toLowerCase().includes(topic)) ||
@@ -540,7 +542,7 @@ export default function DynamicPage({ params }: DynamicPageProps) {
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbPage className="capitalize">
-              {slug.replace(/-/g, " ")}
+              {slugPath.replace(/-/g, " ")}
             </BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
@@ -578,7 +580,7 @@ export default function DynamicPage({ params }: DynamicPageProps) {
             <CardContent className="p-0">
               <p className="text-muted-foreground leading-relaxed">
                 Stay updated with comprehensive coverage of{" "}
-                {slug.replace(/-/g, " ")}. Our in-depth recaps and analysis
+                {slugPath.replace(/-/g, " ")}. Our in-depth recaps and analysis
                 bring you the full story behind every controversy, feud, and
                 dramatic moment in the YouTube community.
               </p>
@@ -603,7 +605,7 @@ export default function DynamicPage({ params }: DynamicPageProps) {
         </h2>
         <div className="flex flex-wrap gap-3">
           {Object.keys(pageContent)
-            .filter((key) => key !== slug)
+            .filter((key) => key !== slugPath)
             .slice(0, 6)
             .map((key) => (
               <Badge
@@ -638,11 +640,6 @@ function VideoGrid({ videos: videoList }: { videos: typeof videos }) {
                   fill
                   className="object-cover transition-transform group-hover:scale-105"
                 />
-                {video.viewCount && (
-                  <Badge className="absolute top-3 right-3" variant="default">
-                    {video.viewCount}
-                  </Badge>
-                )}
               </AspectRatio>
             </CardHeader>
             <CardContent className="p-6">
